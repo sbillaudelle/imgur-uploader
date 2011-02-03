@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
+from urllib import unquote
 import os
 import thread
 import optparse
@@ -190,7 +191,7 @@ class ImgurUploader(cream.Module):
 
     def drag_data_cb(self, source, context, x, y, data, info, time):
         for uri in data.get_uris():
-            path = uri.replace('file://', '')
+            path = unquote(uri).replace('file://', '')
             filename = os.path.split(path)[0]
             mimetype = mimetypes.guess_type(path)[0]
 
