@@ -70,6 +70,7 @@ class ImgurUploader(cream.Module):
         self.filechooser.add_filter(self.filefilter)
         self.filechooser.set_current_folder(os.path.expanduser('~'))
 
+        self.window.connect('destroy', lambda *args: self.quit())
         self.add_image_button.connect('clicked', self.add_image_cb)
         self.remove_image_button.connect('clicked', self.remove_image_cb)
         self.upload_button.connect('clicked', lambda *args: self.upload())
