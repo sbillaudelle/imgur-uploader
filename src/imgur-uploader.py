@@ -56,6 +56,20 @@ class ImgurUploader(cream.Module):
         self.window.set_icon_from_file(icon_path)
         self.window.set_title(self.context.manifest['name'])
         
+        self.filefilter = gtk.FileFilter()
+        self.filefilter.set_name("Alle Bilddateien")
+        self.filefilter.add_mime_type('image/bmp')
+        self.filefilter.add_mime_type('image/gif')
+        self.filefilter.add_mime_type('image/jpeg')
+        self.filefilter.add_mime_type('image/jpg')
+        self.filefilter.add_mime_type('image/pjpeg')
+        self.filefilter.add_mime_type('image/png')
+        self.filefilter.add_mime_type('image/tiff')
+        self.filefilter.add_mime_type('image/x-bmp')
+
+        self.filechooser.add_filter(self.filefilter)
+        self.filechooser.set_current_folder(os.path.expanduser('~'))
+
         self.add_image_button.connect('clicked', self.add_image_cb)
         self.remove_image_button.connect('clicked', self.remove_image_cb)
         self.upload_button.connect('clicked', lambda *args: self.upload())
@@ -202,6 +216,12 @@ class ImgurUploader(cream.Module):
             
     def remove_image_cb(self, source):
         
+        selection = self.treeview_selection.get_selected_rows()[1]
+        
+        for row in selection:
+            if self.liststore[row[0]][3]:
+                self.treeview_selection.unselect_path(row)
+                
         selection = self.treeview_selection.get_selected_rows()[1]
         
         if not selection:

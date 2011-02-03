@@ -19,8 +19,8 @@
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton" id="button1">
-                <property name="label">gtk-open</property>
+              <object class="GtkButton" id="button2">
+                <property name="label">gtk-cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -33,8 +33,8 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button2">
-                <property name="label">gtk-cancel</property>
+              <object class="GtkButton" id="button1">
+                <property name="label">gtk-open</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -56,8 +56,8 @@
       </object>
     </child>
     <action-widgets>
-      <action-widget response="1">button1</action-widget>
       <action-widget response="0">button2</action-widget>
+      <action-widget response="1">button1</action-widget>
     </action-widgets>
   </object>
   <object class="GtkWindow" id="window">
@@ -190,6 +190,7 @@
       <object class="GtkImageMenuItem" id="copy_item">
         <property name="label">gtk-copy</property>
         <property name="visible">True</property>
+        <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </object>
     </child>
