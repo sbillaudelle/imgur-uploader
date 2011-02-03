@@ -29,19 +29,19 @@ from imgur import Imgur
 API_KEY = '97afbe8e4bd793012c847f0f39df8ffe'
 
 class ImgurUploader(cream.Module):
-    
+
     def __init__(self):
-        
+
         cream.Module.__init__(self, 'org.sbillaudelle.ImgurUploader')
-        
+
         parser = optparse.OptionParser()
         (options, args) = parser.parse_args()
-        
+
         self.imgur = Imgur(API_KEY)
-        
+
         self.interface = gtk.Builder()
         self.interface.add_from_file(os.path.join(self.context.get_path(), 'data/interface.ui'))
-        
+
         self.window = self.interface.get_object('window')
         self.treeview = self.interface.get_object('treeview')
         self.filechooser = self.interface.get_object('filechooser')
@@ -51,11 +51,11 @@ class ImgurUploader(cream.Module):
         self.remove_image_button = self.interface.get_object('remove_image_button')
         self.context_menu = self.interface.get_object('context_menu')
         self.copy_item = self.interface.get_object('copy_item')
-        
+
         icon_path = os.path.join(self.context.get_path(), 'data/imgur.png')
         self.window.set_icon_from_file(icon_path)
         self.window.set_title(self.context.manifest['name'])
-        
+
         self.filefilter = gtk.FileFilter()
         self.filefilter.set_name("Alle Bilddateien")
         self.filefilter.add_mime_type('image/bmp')
@@ -80,9 +80,9 @@ class ImgurUploader(cream.Module):
         theme = gtk.icon_theme_get_default()
         icon_info = theme.lookup_icon('ok', 16, 0)
         self.icon_done = gtk.gdk.pixbuf_new_from_file(icon_info.get_filename())
-        
+
         self.liststore = gtk.ListStore(gtk.gdk.Pixbuf, str, gtk.gdk.Pixbuf, bool, bool, int, str, str, bool)
-        
+
         self.treeview.set_model(self.liststore)
         self.treeview_selection = self.treeview.get_selection()
         self.treeview_selection.set_mode(gtk.SELECTION_MULTIPLE)
@@ -94,14 +94,14 @@ class ImgurUploader(cream.Module):
         self.treeview.append_column(self.column_info)
         self.treeview.append_column(self.column_url)
         self.treeview.append_column(self.column_status)
-        
+
         cellrenderer_preview = gtk.CellRendererPixbuf()
         cellrenderer_title = gtk.CellRendererText()
         self.column_info.pack_start(cellrenderer_preview, False)
         self.column_info.pack_start(cellrenderer_title, True)
         self.column_info.add_attribute(cellrenderer_preview, 'pixbuf', 0)
         self.column_info.add_attribute(cellrenderer_title, 'text', 1)
-        
+
         cellrenderer_url = gtk.CellRendererText()
         self.column_url.pack_start(cellrenderer_url, True)
         self.column_url.add_attribute(cellrenderer_url, 'markup', 7)
@@ -120,25 +120,25 @@ class ImgurUploader(cream.Module):
 
         self.count = 0
         gobject.timeout_add(100, self.pulse, self.liststore, self.column_status, cellrenderer_spinner)
-        
+
         for arg in args:
             self.add_image(arg)
-        
-        
+
+
     def copy_url_cb(self, source):
         selection = self.treeview.get_selection().get_selected_rows()[1]
-        
+
         data = ''
 
         for row in selection:
             data += '\n' + self.liststore[row[0]][7].replace('<tt>', '').replace('</tt>', '')
-        
+
         clipboard = gtk.clipboard_get()
         clipboard.set_text(data.strip())
-        
-        
+
+
     def context_menu_cb(self, source, event):
-        
+
         if event.button == 3:
             x = int(event.x)
             y = int(event.y)
@@ -166,14 +166,14 @@ class ImgurUploader(cream.Module):
                     if col == self.column_url:
                         pass
 
-        
+
 
     def upload(self):
         thread.start_new_thread(self._upload, ())
-        
-        
+
+
     def _upload(self):
-        
+
         for image in self.liststore:
             if image[4]:
                 continue
@@ -181,7 +181,7 @@ class ImgurUploader(cream.Module):
             gtk.gdk.threads_enter()
             image[3] = True
             gtk.gdk.threads_leave()
-            
+
             data = self.imgur.upload(image[6])
 
             gtk.gdk.threads_enter()
@@ -194,17 +194,17 @@ class ImgurUploader(cream.Module):
     def pulse(self, liststore, column, spinner):
 
         column.add_attribute(spinner, "pulse", 5)
-        
+
         self.count+=1
-        
+
         for item in liststore:
             item[5] = self.count
-        
+
         return True
-    
-    
+
+
     def add_image_cb(self, source):
-        
+
         res = self.filechooser.run()
         self.filechooser.hide()
 
@@ -212,38 +212,38 @@ class ImgurUploader(cream.Module):
             filenames = self.filechooser.get_filenames()
             for filename in filenames:
                 self.add_image(filename)
-            
-            
+
+
     def remove_image_cb(self, source):
-        
+
         selection = self.treeview_selection.get_selected_rows()[1]
-        
+
         for row in selection:
             if self.liststore[row[0]][3]:
                 self.treeview_selection.unselect_path(row)
-                
+
         selection = self.treeview_selection.get_selected_rows()[1]
-        
+
         if not selection:
             return
-        
+
         while selection:
             row = selection[0]
             self.liststore.remove(self.liststore.get_iter(row))
             selection = self.treeview_selection.get_selected_rows()[1]
-        
-        
+
+
     def add_image(self, image_path):
         thread.start_new_thread(self._add_image, (image_path,))
 
-        
+
     def _add_image(self, image_path):
-        
+
         icon = gtk.gdk.pixbuf_new_from_file(image_path)
         width = icon.get_width()
         height = icon.get_height()
         factor = float(width) / float(height)
-        
+
         icon = icon.scale_simple(int(20 * factor), 20, gtk.gdk.INTERP_BILINEAR)
 
         gtk.gdk.threads_enter()
