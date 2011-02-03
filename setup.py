@@ -36,7 +36,7 @@ data_files.extend(
 
 setup(
     name = 'imgur-uploader',
-    version = '0.0.1',
+    version = '0.0.2',
     author = 'The Cream Project (http://cream-project.org)',
     url = 'http://github.com/sbillaudelle/imgur-uploader',
     data_files = data_files,

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <manifest namespace="org.cream">
-    <component name="Imgur Uploader" id="org.sbillaudelle.ImgurUploader" version="0.0.1" type=".Module" entry="imgur-uploader.py">
+    <component name="Imgur Uploader" id="org.sbillaudelle.ImgurUploader" version="0.0.2" type=".Module" entry="imgur-uploader.py">
         <license title="GPL" version="3+" />
 
         <author name="Sebastian Billaudelle" mail="stein@cream-project.org" type="developer" />
