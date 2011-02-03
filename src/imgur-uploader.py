@@ -133,12 +133,15 @@ class ImgurUploader(cream.Module):
             self.add_image(arg)
 
 
-    def copy_url_cb(self, source):
-        selection = self.treeview.get_selection().get_selected_rows()[1]
+    @property
+    def selected_images(self):
+        return self.treeview.get_selection().get_selected_rows()[1]
 
+
+    def copy_url_cb(self, source):
         data = ''
 
-        for row in selection:
+        for row in self.selected_images:
             data += '\n' + self.liststore[row[0]][7].replace('<tt>', '').replace('</tt>', '')
 
         clipboard = gtk.clipboard_get()
@@ -150,22 +153,20 @@ class ImgurUploader(cream.Module):
         if event.button == 3:
             x = int(event.x)
             y = int(event.y)
-            time = event.time
             path_info = self.treeview.get_path_at_pos(x, y)
             if path_info is not None:
                 path, col, cellx, celly = path_info
-                if not path in self.treeview_selection.get_selected_rows()[1]:
+                if not path in self.selected_images:
                     self.treeview.set_cursor(path, col, 0)
                 if self.liststore[path[0]][4]:
                     self.copy_item.set_property('sensitive', True)
                 else:
                     self.copy_item.set_property('sensitive', False)
-                self.context_menu.popup(None, None, None, event.button, time)
+                self.context_menu.popup(None, None, None, event.button, event.time)
             return True
         elif event.button == 1:
             x = int(event.x)
             y = int(event.y)
-            time = event.time
             path_info = self.treeview.get_path_at_pos(x, y)
             if path_info is not None:
                 path, col, cellx, celly = path_info
