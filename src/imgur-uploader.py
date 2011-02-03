@@ -21,6 +21,7 @@ import thread
 import optparse
 import gobject
 import gtk
+import mimetypes
 
 import cream
 
@@ -77,6 +78,12 @@ class ImgurUploader(cream.Module):
         self.close_button.connect('clicked', lambda *args: self.quit())
         self.treeview.connect('button-press-event', self.context_menu_cb)
         self.copy_item.connect('activate', self.copy_url_cb)
+
+        # Initialize drag and drop...
+        self.treeview.drag_dest_set(0, [], 0)
+        self.treeview.connect('drag_motion', self.drag_motion_cb)
+        self.treeview.connect('drag_drop', self.drag_drop_cb)
+        self.treeview.connect('drag_data_received', self.drag_data_cb)
 
         theme = gtk.icon_theme_get_default()
         icon_info = theme.lookup_icon('ok', 16, 0)
@@ -166,6 +173,26 @@ class ImgurUploader(cream.Module):
                 if self.liststore[path[0]][4]:
                     if col == self.column_url:
                         pass
+
+    def drag_motion_cb(self, source, context, x, y, time):
+        context.drag_status(gtk.gdk.ACTION_MOVE, time)
+        return True
+
+    def drag_drop_cb(self, source, context, x, y, time):
+        if 'text/uri-list' in context.targets:
+            source.drag_get_data(context, 'text/uri-list', time)
+        return True
+
+    def drag_data_cb(self, source, context, x, y, data, info, time):
+        for uri in data.get_uris():
+            path = uri.replace('file://', '')
+            filename = os.path.split(path)[0]
+            mimetype = mimetypes.guess_type(path)[0]
+
+            if self.filefilter.filter((path, uri, filename, mimetype)):
+                self.add_image(path)
+
+        context.finish(True, False, time)
 
 
 
