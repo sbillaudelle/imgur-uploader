@@ -22,6 +22,7 @@ import optparse
 import gobject
 import gtk
 import mimetypes
+import webbrowser
 
 import cream
 
@@ -164,7 +165,8 @@ class ImgurUploader(cream.Module):
                     self.copy_item.set_property('sensitive', False)
                 self.context_menu.popup(None, None, None, event.button, event.time)
             return True
-        elif event.button == 1:
+
+        elif event.button == 1 and event.type == gtk.gdk._2BUTTON_PRESS:
             x = int(event.x)
             y = int(event.y)
             path_info = self.treeview.get_path_at_pos(x, y)
@@ -172,8 +174,10 @@ class ImgurUploader(cream.Module):
                 path, col, cellx, celly = path_info
 
                 if self.liststore[path[0]][4]:
-                    if col == self.column_url:
-                        pass
+                    url = self.liststore[self.selected_images[0]][7]
+                    url = url.replace('<tt>', '').replace('</tt>', '')
+                    webbrowser.open(url)
+
 
     def drag_motion_cb(self, source, context, x, y, time):
         context.drag_status(gtk.gdk.ACTION_MOVE, time)
