@@ -21,7 +21,7 @@ import os
 import thread
 import optparse
 import gobject
-import gtk
+from gi.repository import Gtk as gtk, Gdk as gdk, GdkPixbuf as gdkpixbuf
 import mimetypes
 import webbrowser
 
@@ -36,6 +36,11 @@ class ImgurUploader(cream.Module):
     def __init__(self):
 
         cream.Module.__init__(self, 'org.sbillaudelle.ImgurUploader')
+        
+        def start_attempt_cb(*args):
+            print args
+        
+        self.connect('start-attempt', start_attempt_cb)
 
         parser = optparse.OptionParser()
         (options, args) = parser.parse_args()
@@ -87,15 +92,15 @@ class ImgurUploader(cream.Module):
         self.treeview.connect('drag_drop', self.drag_drop_cb)
         self.treeview.connect('drag_data_received', self.drag_data_cb)
 
-        theme = gtk.icon_theme_get_default()
+        theme = gtk.IconTheme.get_default()
         icon_info = theme.lookup_icon('ok', 16, 0)
-        self.icon_done = gtk.gdk.pixbuf_new_from_file(icon_info.get_filename())
+        self.icon_done = gdkpixbuf.Pixbuf.new_from_file(icon_info.get_filename())
 
-        self.liststore = gtk.ListStore(gtk.gdk.Pixbuf, str, gtk.gdk.Pixbuf, bool, bool, int, str, str, bool)
-
+        self.liststore = gtk.ListStore(gdkpixbuf.Pixbuf, str, gdkpixbuf.Pixbuf, bool, bool, int, str, str, bool)
+        
         self.treeview.set_model(self.liststore)
         self.treeview_selection = self.treeview.get_selection()
-        self.treeview_selection.set_mode(gtk.SELECTION_MULTIPLE)
+        self.treeview_selection.set_mode(gtk.SelectionMode.MULTIPLE)
 
         self.column_info = gtk.TreeViewColumn("Image")
         self.column_info.set_property('expand', True)
@@ -120,6 +125,7 @@ class ImgurUploader(cream.Module):
         self.column_status.pack_end(cellrenderer_spinner, False)
         self.column_status.add_attribute(cellrenderer_spinner, 'visible', 3)
         self.column_status.add_attribute(cellrenderer_spinner, 'active', 3)
+        self.column_status.add_attribute(cellrenderer_spinner, 'pulse', 5)
 
         cellrenderer_status = gtk.CellRendererPixbuf()
         self.column_status.pack_end(cellrenderer_status, False)
@@ -133,8 +139,7 @@ class ImgurUploader(cream.Module):
 
         for arg in args:
             self.add_image(arg)
-
-
+            
     @property
     def selected_images(self):
         return self.treeview.get_selection().get_selected_rows()[1]
@@ -144,10 +149,10 @@ class ImgurUploader(cream.Module):
         data = ''
 
         for row in self.selected_images:
-            data += '\n' + self.liststore[row[0]][7].replace('<tt>', '').replace('</tt>', '')
+            data += '\n' + self.liststore[row][7].replace('<tt>', '').replace('</tt>', '')
 
-        clipboard = gtk.clipboard_get()
-        clipboard.set_text(data.strip())
+        clipboard = gtk.Clipboard.get(gdk.atom_intern('CLIPBOARD', True))
+        clipboard.set_text(data.strip(), -1)
 
 
     def context_menu_cb(self, source, event):
@@ -160,28 +165,28 @@ class ImgurUploader(cream.Module):
                 path, col, cellx, celly = path_info
                 if not path in self.selected_images:
                     self.treeview.set_cursor(path, col, 0)
-                if self.liststore[path[0]][4]:
+                if self.liststore[path][4]:
                     self.copy_item.set_property('sensitive', True)
                 else:
                     self.copy_item.set_property('sensitive', False)
-                self.context_menu.popup(None, None, None, event.button, event.time)
+                self.context_menu.popup(None, None, None, None, event.button, event.time)
             return True
 
-        elif event.button == 1 and event.type == gtk.gdk._2BUTTON_PRESS:
+        elif event.button == 1 and event.type == gdk.EventType._2BUTTON_PRESS:
             x = int(event.x)
             y = int(event.y)
             path_info = self.treeview.get_path_at_pos(x, y)
             if path_info is not None:
                 path, col, cellx, celly = path_info
 
-                if self.liststore[path[0]][4]:
+                if self.liststore[path][4]:
                     url = self.liststore[self.selected_images[0]][7]
                     url = url.replace('<tt>', '').replace('</tt>', '')
                     webbrowser.open(url)
 
 
     def drag_motion_cb(self, source, context, x, y, time):
-        context.drag_status(gtk.gdk.ACTION_MOVE, time)
+        context.drag_status(gdk.DragAction.MOVE, time)
         return True
 
     def drag_drop_cb(self, source, context, x, y, time):
@@ -212,25 +217,23 @@ class ImgurUploader(cream.Module):
             if image[4]:
                 continue
 
-            gtk.gdk.threads_enter()
+            #gtk.gdk.threads_enter()
             image[3] = True
-            gtk.gdk.threads_leave()
+            #gtk.gdk.threads_leave()
 
             data = self.imgur.upload(image[6])
 
-            gtk.gdk.threads_enter()
+            #gtk.gdk.threads_enter()
             image[7] = "<tt>{0}</tt>".format(data['rsp']['image']['imgur_page'])
             image[3] = False
             image[4] = True
-            gtk.gdk.threads_leave()
+            #gtk.gdk.threads_leave()
 
 
     def pulse(self, liststore, column, spinner):
 
-        column.add_attribute(spinner, "pulse", 5)
-
         self.count+=1
-
+        
         for item in liststore:
             item[5] = self.count
 
@@ -253,7 +256,7 @@ class ImgurUploader(cream.Module):
         selection = self.treeview_selection.get_selected_rows()[1]
 
         for row in selection:
-            if self.liststore[row[0]][3]:
+            if self.liststore[row][3]:
                 self.treeview_selection.unselect_path(row)
 
         selection = self.treeview_selection.get_selected_rows()[1]
@@ -273,16 +276,16 @@ class ImgurUploader(cream.Module):
 
     def _add_image(self, image_path):
 
-        icon = gtk.gdk.pixbuf_new_from_file(image_path)
+        icon = gdkpixbuf.Pixbuf.new_from_file(image_path)
         width = icon.get_width()
         height = icon.get_height()
         factor = float(width) / float(height)
 
-        icon = icon.scale_simple(int(20 * factor), 20, gtk.gdk.INTERP_BILINEAR)
+        icon = icon.scale_simple(int(20 * factor), 20, gdkpixbuf.InterpType.BILINEAR)
 
-        gtk.gdk.threads_enter()
+        #gtk.gdk.threads_enter()
         self.liststore.append((icon, os.path.basename(image_path), self.icon_done, False, False, 0, image_path, '', True))
-        gtk.gdk.threads_leave()
+        #gtk.gdk.threads_leave()
 
 
 if __name__ == '__main__':
